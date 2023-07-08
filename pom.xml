@@ -6,7 +6,7 @@
     <packaging>pom</packaging>
 
     <groupId>VertxClass</groupId>
-    <artifactId>UdemyVertexClass</artifactId>
+    <artifactId>vertx-course1</artifactId> <!-- original name: UdemyVertexClass -->
     <version>1.0-SNAPSHOT</version>
 
     <properties>
