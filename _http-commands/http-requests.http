@@ -1,5 +1,35 @@
-### GET pg assets
+### GET local host
 GET http://localhost:8080/
 
-### GET pg assets
+### GET Products without AuthToken
 GET http://localhost:8080/api/v1/products
+
+### GET Products with AuthToken
+GET http://localhost:8080/api/v1/products
+AuthToken: 123
+
+### GET Product by Id
+GET http://localhost:8080/api/v1/products/100
+AuthToken: 123
+
+### Create Product
+POST http://localhost:8080/api/v1/products
+AuthToken: 123
+
+{
+    "number": "123",
+    "description": "My item 123"
+}
+
+### Update Product
+PUT http://localhost:8080/api/v1/products/200
+AuthToken: 123
+
+{
+    "number": "12345",
+    "description": "My item 12345"
+}
+
+### Delete Product by Id
+DELETE http://localhost:8080/api/v1/products/200
+AuthToken: 123
