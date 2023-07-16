@@ -12,121 +12,86 @@ import io.vertx.ext.mongo.MongoClient;
 
 public class MongoManager {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MongoManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MongoManager.class);
+    private MongoClient mongoClient = null;
 
-	private MongoClient mongoClient = null;
+    public MongoManager(MongoClient mongoClient) {
 
-	public MongoManager(MongoClient mongoClient) {
+        this.mongoClient = mongoClient;
+    }
 
-		this.mongoClient = mongoClient;
+    public void registerConsumer(Vertx vertx) {
 
-	}
+        vertx.eventBus().consumer("com.tomj.mongoservice", message -> {
 
-	public void registerConsumer(Vertx vertx) {
+            System.out.println("Recevied message: " + message.body());
+            JsonObject inputJson = new JsonObject(message.body().toString());
+            if (inputJson.getString("cmd").equals("findAll")) {
+                getAllProducts(message);
+            }
+            if (inputJson.getString("cmd").equals("findById")) {
+                getProductById(message, inputJson.getString("productId"));
+            }
+        });
+    }
 
-		vertx.eventBus().consumer("com.tomj.mongoservice", message -> {
+    private void getAllProducts(Message<Object> message) {
 
-			System.out.println("Recevied message: " + message.body());
+        FindOptions findOptions = new FindOptions();
+        // findOptions.setLimit(1);
 
-			JsonObject inputJson = new JsonObject(message.body().toString());
+        mongoClient.findWithOptions("products", new JsonObject(), findOptions, results -> {
 
-			if (inputJson.getString("cmd").equals("findAll")) {
-				getAllProducts(message);
-			}
+            try {
+                List<JsonObject> objects = results.result();
+                if (objects != null && objects.size() != 0) {
+                    System.out.println("Got some data len=" + objects.size());
+                    JsonObject jsonResponse = new JsonObject();
+                    jsonResponse.put("products", objects);
+                    message.reply(jsonResponse.toString());
 
-			if (inputJson.getString("cmd").equals("findById")) {
-				getProductById(message, inputJson.getString("productId"));
-			}
+                } else {
 
-		});
+                    JsonObject jsonResponse = new JsonObject();
+                    jsonResponse.put("error", "No items found");
+                    message.reply(jsonResponse.toString());
+                }
 
-	}
+            } catch (Exception e) {
+                LOGGER.info("getAllProducts Failed exception e=", e.getLocalizedMessage());
+                JsonObject jsonResponse = new JsonObject();
+                jsonResponse.put("error", "Exception and No items found");
+                message.reply(jsonResponse.toString());
+            }
+        });
+    }
 
-	private void getAllProducts(Message<Object> message) {
+    private void getProductById(Message<Object> message, String productId) {
 
-		FindOptions findOptions = new FindOptions();
+        JsonObject query = new JsonObject().put("_id", productId);
+        FindOptions findOptions = new FindOptions();
 
-		// findOptions.setLimit(1);
+        mongoClient.findWithOptions("products", query, findOptions, results -> {
 
-		mongoClient.findWithOptions("products", new JsonObject(), findOptions, results -> {
-
-			try {
-				List<JsonObject> objects = results.result();
-
-				if (objects != null && objects.size() != 0) {
-
-					System.out.println("Got some data len=" + objects.size());
-
-					JsonObject jsonResponse = new JsonObject();
-
-					jsonResponse.put("products", objects);
-
-					message.reply(jsonResponse.toString());
-
-				} else {
-
-					JsonObject jsonResponse = new JsonObject();
-
-					jsonResponse.put("error", "No items found");
-
-					message.reply(jsonResponse.toString());
-				}
-
-			} catch (Exception e) {
-				LOGGER.info("getAllProducts Failed exception e=", e.getLocalizedMessage());
-
-				JsonObject jsonResponse = new JsonObject();
-
-				jsonResponse.put("error", "Exception and No items found");
-
-				message.reply(jsonResponse.toString());
-			}
-
-		});
-
-	}
-	
-	private void getProductById(Message<Object> message, String productId) {
-
-		FindOptions findOptions = new FindOptions();
-
-		// findOptions.setLimit(1);
-
-		mongoClient.findWithOptions("products", new JsonObject().put("_id", productId), findOptions, results -> {
-
-			try {
-				List<JsonObject> objects = results.result();
-
-				if (objects != null && objects.size() != 0) {
-
-					System.out.println("Got some data len=" + objects.size());
-
-					JsonObject jsonResponse = objects.get(0);
-
-					message.reply(jsonResponse.toString());
-
-				} else {
-
-					JsonObject jsonResponse = new JsonObject();
-
-					jsonResponse.put("error", "No items found");
-
-					message.reply(jsonResponse.toString());
-				}
-
-			} catch (Exception e) {
-				LOGGER.info("getAllProducts Failed exception e=", e.getLocalizedMessage());
-
-				JsonObject jsonResponse = new JsonObject();
-
-				jsonResponse.put("error", "Exception and No items found");
-
-				message.reply(jsonResponse.toString());
-			}
-
-		});
-
-	}
-
+            try {
+                List<JsonObject> objects = results.result();
+                if (objects != null && objects.size() != 0) {
+                    System.out.println("Got some data len=" + objects.size());
+                    JsonObject jsonResponse = objects.get(0);
+                    message.reply(jsonResponse.toString());
+                } else {
+                    JsonObject jsonResponse = new JsonObject();
+                    jsonResponse.put("error", "No items found");
+                    message.reply(jsonResponse.toString());
+                }
+            }
+            catch (Exception e) {
+                LOGGER.info("getAllProducts Failed exception e=", e.getLocalizedMessage());
+                JsonObject jsonResponse = new JsonObject();
+                jsonResponse.put("error", "Exception and No items found");
+                message.reply(jsonResponse.toString());
+            }
+        });
+    }
 
 }
