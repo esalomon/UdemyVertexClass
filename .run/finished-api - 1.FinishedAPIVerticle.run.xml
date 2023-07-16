@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="FinishedAPIVerticle" type="Application" factoryName="Application" nameIsGenerated="true">
+  <configuration default="false" name="finished-api - 1.FinishedAPIVerticle" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="com.tomj.finishedapi.FinishedAPIVerticle" />
     <module name="finishedapi" />
     <extension name="coverage">
