@@ -1,6 +1,9 @@
 ### GET local host
 GET http://localhost:8080/
 
+### GET local host
+GET http://localhost:8080/yo.html
+
 ### GET Products without AuthToken
 GET http://localhost:8080/api/v1/products
 
