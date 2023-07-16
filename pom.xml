@@ -24,6 +24,7 @@
         <module>formalapi</module>
         <module>finishedapi</module>
         <module>vertxmongo</module>
+        <module>finished-api2</module>
     </modules>
 
 </project>
