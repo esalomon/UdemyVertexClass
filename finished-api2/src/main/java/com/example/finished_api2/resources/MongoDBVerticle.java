@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 import static com.example.finished_api2.constants.ConstantsApp.MONGO_DB_MESSAGE;
+import static com.example.finished_api2.constants.ConstantsApp.PRODUCTS_COLLECTION;
 
 @Slf4j
 public class MongoDBVerticle extends AbstractVerticle {
@@ -61,7 +62,7 @@ public class MongoDBVerticle extends AbstractVerticle {
 
     private void getProductList(Message<Object> message) {
 
-        mongoClient.find("products", new JsonObject(), handler -> {
+        mongoClient.find(PRODUCTS_COLLECTION, new JsonObject(), handler -> {
 
             if (handler.failed()) {
                 String errorMessage = String.format(
@@ -74,7 +75,7 @@ public class MongoDBVerticle extends AbstractVerticle {
             List<JsonObject> result = handler.result();
             log.info("The getProductList() handler got data from mongoDB size: {}", result.size());
             var response = new JsonObject()
-                .put("products", result);
+                .put(PRODUCTS_COLLECTION, result);
             message.reply(response.toString());
         });
     }
