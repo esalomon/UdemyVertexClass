@@ -8,6 +8,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Objects;
+
 @Slf4j
 public class MainVerticle extends AbstractVerticle {
 
@@ -34,7 +36,7 @@ public class MainVerticle extends AbstractVerticle {
 
     private void configHttpServer(Promise<Void> startPromise, DeploymentOptions options) {
 
-        Integer port = options.getConfig().getInteger("http.port");
+        Integer port = getPort(startPromise, options);
         vertx.createHttpServer().requestHandler(req -> {
             req.response()
                 .putHeader("content-type", "text/plain")
@@ -47,5 +49,17 @@ public class MainVerticle extends AbstractVerticle {
                 startPromise.fail(http.cause());
             }
         });
+    }
+
+    private static Integer getPort(Promise<Void> startPromise, DeploymentOptions options) {
+
+        Integer port = options.getConfig().getInteger("http.port");
+        if (Objects.isNull(port)) {
+            String errorMessage = "The 'http.port' property was not provided.";
+            log.error(errorMessage);
+            startPromise.fail(errorMessage);
+            System.exit(-1);
+        }
+        return port;
     }
 }
