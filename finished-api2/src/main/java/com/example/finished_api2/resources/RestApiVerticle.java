@@ -29,7 +29,7 @@ public class RestApiVerticle extends AbstractVerticle {
             .handler(BodyHandler.create()) // handles the request body
             .failureHandler(this::handleFailure); // general endpoint failure.
 
-        ProductRestAPI.attach(router);
+        ProductRestAPI.attach(vertx, router);
 
         return router;
     }
@@ -45,6 +45,7 @@ public class RestApiVerticle extends AbstractVerticle {
             .end(
                 new JsonObject()
                     .put("message", "There was an error")
+                    .put("details", context.failure())
                     .toBuffer());
     }
 

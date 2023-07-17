@@ -1,7 +1,11 @@
 package com.example.finished_api2.resources;
 
-import io.netty.handler.codec.http.HttpHeaderValues;
-import io.vertx.core.http.HttpHeaders;
+import com.example.finished_api2.constants.ConstantsApp;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -13,19 +17,56 @@ public class ProductRestAPI {
     private ProductRestAPI() {
     }
 
-    public static void attach(Router router) {
+    public static void attach(Vertx vertx, Router router) {
 
-        router.get("/api/v1/products").handler(ProductRestAPI::getProductList);
+        router.get("/api/v1/products").handler(context -> getProductList(vertx, context));
     }
 
-    private static void getProductList(RoutingContext context) {
+    private static void getProductList(Vertx vertx, RoutingContext context) {
 
-        var response = new JsonObject()
-            .put("message", "get product list was executed");
+        log.info("Get product list {} received a request and sent a message", context.normalizedPath());
+        var command = new JsonObject()
+            .put("command", "get-product-list");
 
-        log.info("Get product list {} responds with {}", context.normalizedPath(), response.encode());
+        vertx.eventBus().request(ConstantsApp.MONGO_DB_MESSAGE, command.toString(), reply -> {
+
+            if (reply.succeeded()) {
+                handleSuccess(context, reply);
+            }
+            else {
+                handleFailure(context, reply);
+            }
+        });
+    }
+
+    private static void handleSuccess(RoutingContext context, AsyncResult<Message<Object>> reply) {
+
+        var replyResults = Json.encodePrettily(
+            new JsonObject(reply.result().body().toString())
+        );
+        log.info("Get product list {} got success message: {}",
+            context.normalizedPath(),
+            replyResults);
+
         context.response()
-            .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
-            .end(response.toBuffer());
+            .setStatusCode(200)
+            .putHeader("content-type", "application/json")
+            .end(replyResults);
     }
+
+    private static void handleFailure(RoutingContext context, AsyncResult<Message<Object>> reply) {
+
+        var replyResults = Json.encodePrettily(
+            new JsonObject()
+                .put("code", "ERROR-001")
+                .put("message", reply.cause().getMessage())
+        );
+        log.info("getProductList() got failure reply message.", reply.cause());
+
+        context.response()
+            .setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code())
+            .putHeader("content-type", "application/json")
+            .end(replyResults);
+    }
+
 }
