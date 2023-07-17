@@ -61,7 +61,9 @@ public class ProductRestAPI {
                 .put("code", "ERROR-001")
                 .put("message", reply.cause().getMessage())
         );
-        log.info("getProductList() got failure reply message.", reply.cause());
+        log.info("Get product list {} got failure message: {}",
+            context.normalizedPath(),
+            reply.cause());
 
         context.response()
             .setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code())
