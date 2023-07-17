@@ -1,14 +1,11 @@
 package com.example.finished_api2;
 
+import com.example.finished_api2.resources.MongoDBVerticle;
+import com.example.finished_api2.resources.RestApiVerticle;
 import io.vertx.config.ConfigRetriever;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Objects;
 
 @Slf4j
 public class MainVerticle extends AbstractVerticle {
@@ -23,43 +20,33 @@ public class MainVerticle extends AbstractVerticle {
     public void start(Promise<Void> startPromise) throws Exception {
 
         ConfigRetriever configRetriever = ConfigRetriever.create(vertx);
-        configRetriever.getConfig(config -> { // Use config/config.json from resources/classpath
+        configRetriever.getConfig(config -> { // retrieves config/config.json from resources/classpath
 
             if (config.succeeded()) {
+
                 JsonObject configJson = config.result();
                 log.info("Retrieved properties from 'config/config.json' \n{}", configJson.encodePrettily());
                 DeploymentOptions options = new DeploymentOptions().setConfig(configJson);
-                configHttpServer(startPromise, options);
+
+                vertx.deployVerticle(RestApiVerticle.class.getName(), options)
+                    .onFailure(startPromise::fail)
+                    .onSuccess(id ->
+                        log.info("Deployed {} with id {}", RestApiVerticle.class.getSimpleName(), id))
+                    .compose(next ->
+                        deployMongoDbVerticle(startPromise, options)
+                    );
+
             }
         });
     }
 
-    private void configHttpServer(Promise<Void> startPromise, DeploymentOptions options) {
+    private Future<String> deployMongoDbVerticle(final Promise<Void> startPromise, DeploymentOptions options) {
 
-        Integer port = getPort(startPromise, options);
-        vertx.createHttpServer().requestHandler(req -> {
-            req.response()
-                .putHeader("content-type", "text/plain")
-                .end("Hello from Vert.x!");
-        }).listen(port, http -> {
-            if (http.succeeded()) {
+        return vertx.deployVerticle(MongoDBVerticle.class.getName(), options)
+            .onFailure(startPromise::fail)
+            .onSuccess(id -> {
+                log.info("Deployed {} with id {}", MongoDBVerticle.class.getSimpleName(), id);
                 startPromise.complete();
-                log.info("HTTP server started on port: {}", port);
-            } else {
-                startPromise.fail(http.cause());
-            }
-        });
-    }
-
-    private static Integer getPort(Promise<Void> startPromise, DeploymentOptions options) {
-
-        Integer port = options.getConfig().getInteger("http.port");
-        if (Objects.isNull(port)) {
-            String errorMessage = "The 'http.port' property was not provided.";
-            log.error(errorMessage);
-            startPromise.fail(errorMessage);
-            System.exit(-1);
-        }
-        return port;
+            });
     }
 }
